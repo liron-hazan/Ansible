@@ -1,0 +1,83 @@
+---
+  - name: Update & upgrade packages
+    apt:
+      upgrade: 'True'
+      update_cache: yes
+
+  - name: Get my public IP
+    community.general.ipify_facts:
+      api_url: https://api.ipify.org/
+
+  - name: Copy extracted artifact
+    synchronize:
+      src: /home/liron/myagent/_work/1/s/{{ dir }}
+      dest: /home/liron/
+
+  - name: Create new .env File
+    template:
+      src: ../templates/.env.j2
+      dest: /{{ mydir }}/.env
+
+  - name: "Add nodejs apt key"
+    apt_key:
+      url:  https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+      state: present
+
+  - name: "Add nodejs 14.x ppa for apt repo"
+    apt_repository:
+      repo: deb https://deb.nodesource.com/node_14.x focal main
+      state: present
+      update_cache: yes
+
+  - name: Install nodejs
+    apt:
+      name: nodejs
+      state: present
+
+  - name: Install nodemon dependency
+    npm:
+      name: nodemon
+      path: /{{ mydir }}/
+      state: present
+
+  - name: Install dotenv dependency
+    npm:
+      name: dotenv
+      path: /{{ mydir }}/
+      state: present
+
+  - name: Install Npm pm2 Module
+    npm:
+      name: pm2
+      path: /{{ mydir }}/
+      state: present
+      global: yes
+
+  - name: Initialize Tables in DB
+    shell:
+       cmd: npm run initdb
+       chdir: /{{ mydir }}/       
+    run_once: 'True'
+
+  - name: npm clean 
+    shell:
+      cmd: npm clean-install
+      chdir: /{{ mydir }}/
+      executable: /bin/bash 
+
+  - name: Start Nomdemon Module
+    shell:
+      cmd: pm2 start npm -- run dev
+      chdir: /{{ mydir }}/	
+
+  - name: saving the state of pm2
+    shell:
+     cmd: pm2 save
+     chdir: /{{ mydir }}/
+     executable: /bin/bash
+
+  - name: starting the state of pm2
+    shell:
+      cmd: pm2 startup
+      chdir: /{{ mydir }}/
+      executable: /bin/bash
