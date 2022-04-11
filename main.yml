@@ -1,0 +1,11 @@
+---
+- hosts: [staging]
+  become: true
+  vars:
+    dir: "weight-tracker-app"   
+    mydir: "home/liron/weight-tracker-app"
+  
+  vars_files:
+    "roles/common/vars/main.yml"
+  roles:
+    - role: common
